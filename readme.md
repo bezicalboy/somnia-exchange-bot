@@ -54,12 +54,12 @@ Using `screen` allows the script to run continuously on a server.
 
 1.  **Start a new screen session:**
     ```bash
-    screen -S swapbot
+    screen -Rd somnia-swap
     ```
 
 2.  **Start the bot inside the screen session:**
     ```bash
-    node index.js
+    bun index.js
     ```
 
 3.  **Detach from the session:**
@@ -67,5 +67,5 @@ Using `screen` allows the script to run continuously on a server.
 
 4.  **Re-attach to the session to view logs:**
     ```bash
-    screen -r swapbot
+    screen -r somnia-swap
     ```
