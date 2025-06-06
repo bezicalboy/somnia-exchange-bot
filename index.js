@@ -2,7 +2,11 @@ import "dotenv/config";
 import { ethers } from "ethers";
 import readline from 'readline';
 
-let PRIVATE_KEY = process.env.PRIVATE_KEY; 
+// ----------------------------------------------------------------
+// #region Configuration
+// ----------------------------------------------------------------
+
+let PRIVATE_KEY = process.env.PRIVATE_KEY; // Use 'let' to allow modification
 const RPC_URL = process.env.RPC_URL_SOMNIA_TESTNET;
 const USDTG_ADDRESS = process.env.USDTG_ADDRESS;
 const NIA_ADDRESS = process.env.NIA_ADDRESS;
@@ -10,25 +14,15 @@ const ROUTER_ADDRESS = "0xb98c15a0dC1e271132e341250703c7e94c059e8D";
 const WSTT_ADDRESS = "0xf22ef0085f6511f70b01a68f360dcc56261f768a";
 const NETWORK_NAME = "Somnia Testnet";
 
-
+// Automation Settings
 const TOTAL_SWAPS_PER_24_HOURS = 100;
 const DELAY_PER_SWAP_MS = (24 * 60 * 60 * 1000) / TOTAL_SWAPS_PER_24_HOURS; // ~14.4 minutes
 
+// #endregion Configuration
 
-console.log(`
- ███▄    █   ▄████ ▓█████  ███▄    █ ▄▄▄█████▓ ▒█████  ▄▄▄█████▓
- ██ ▀█   █  ██▒ ▀█▒▓█   ▀  ██ ▀█   █ ▓  ██▒ ▓▒▒██▒  ██▒▓  ██▒ ▓▒
-▓██  ▀█ ██▒▒██░▄▄▄░▒███   ▓██  ▀█ ██▒▒ ▓██░ ▒░▒██░  ██▒▒ ▓██░ ▒░
-▓██▒  ▐▌██▒░▓█  ██▓▒▓█  ▄ ▓██▒  ▐▌██▒░ ▓██▓ ░ ▒██   ██░░ ▓██▓ ░ 
-▒██░   ▓██░░▒▓███▀▒░▒████▒▒██░   ▓██░  ▒██▒ ░ ░ ████▓▒░  ▒██▒ ░ 
-░ ▒░   ▒ ▒  ░▒   ▒ ░░ ▒░ ░░ ▒░   ▒ ▒   ▒ ░░   ░ ▒░▒░▒░   ▒ ░░   
-░ ░░   ░ ▒░  ░   ░  ░ ░  ░░ ░░   ░ ▒░    ░      ░ ▒ ▒░     ░    
-   ░   ░ ░ ░ ░   ░    ░      ░   ░ ░   ░      ░ ░ ░ ▒    ░      
-         ░       ░    ░  ░         ░              ░ ░           
-                                                                
-    `);
-
-console.log('join my tele channel hehe, t.me/helladrops');
+// ----------------------------------------------------------------
+// #region ABIs and Global Variables
+// ----------------------------------------------------------------
 
 const ERC20ABI = [
   "function decimals() view returns (uint8)",
@@ -49,13 +43,35 @@ let provider = null;
 let lastSwapDirectionSttUsdtg = "USDTG_TO_STT";
 let lastSwapDirectionSttNia = "NIA_TO_STT";
 
+// #endregion Global Variables
+
+// ----------------------------------------------------------------
+// #region Helper Functions
+// ----------------------------------------------------------------
+
+console.log(`
+ ███▄    █   ▄████ ▓█████  ███▄    █ ▄▄▄█████▓ ▒█████  ▄▄▄█████▓
+ ██ ▀█   █  ██▒ ▀█▒▓█   ▀  ██ ▀█   █ ▓  ██▒ ▓▒▒██▒  ██▒▓  ██▒ ▓▒
+▓██  ▀█ ██▒▒██░▄▄▄░▒███   ▓██  ▀█ ██▒▒ ▓██░ ▒░▒██░  ██▒▒ ▓██░ ▒░
+▓██▒  ▐▌██▒░▓█  ██▓▒▓█  ▄ ▓██▒  ▐▌██▒░ ▓██▓ ░ ▒██   ██░░ ▓██▓ ░ 
+▒██░   ▓██░░▒▓███▀▒░▒████▒▒██░   ▓██░  ▒██▒ ░ ░ ████▓▒░  ▒██▒ ░ 
+░ ▒░   ▒ ▒  ░▒   ▒ ░░ ▒░ ░░ ▒░   ▒ ▒   ▒ ░░   ░ ▒░▒░▒░   ▒ ░░   
+░ ░░   ░ ▒░  ░   ░  ░ ░  ░░ ░░   ░ ▒░    ░      ░ ▒ ▒░     ░    
+   ░   ░ ░ ░ ░   ░    ░      ░   ░ ░   ░      ░ ░ ░ ▒    ░      
+         ░       ░    ░  ░         ░              ░ ░           
+                                                                
+`);
+
 function log(message, type = "system") {
   const timestamp = new Date().toISOString();
   const cleanMessage = message.replace(/\{[^}]+\}/g, '');
   console.log(`[${timestamp}] [${type.toUpperCase()}] ${cleanMessage}`);
 }
 
-
+/**
+ * Prompts the user for their private key if it's not found in the .env file.
+ * @returns {Promise<string>} The private key.
+ */
 function promptForPrivateKey() {
     const rl = readline.createInterface({
         input: process.stdin,
@@ -68,6 +84,7 @@ function promptForPrivateKey() {
         
         rl.question('Private key not found in .env. Please enter it now: ', (key) => {
             rl.close();
+            // Use process.stdout.write to prevent the key from being in the final log line
             process.stdout.write('\n'); 
             resolve(key.trim());
         });
@@ -86,9 +103,16 @@ function getRandomNumber(min, max, decimals = 4) {
 
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
+// #endregion Helper Functions
+
+// ----------------------------------------------------------------
+// #region Core Blockchain Functions
+// ----------------------------------------------------------------
+
 async function updateWalletData() {
   try {
     if (!provider) provider = new ethers.JsonRpcProvider(RPC_URL);
+    // The globalWallet will now be initialized with the key from .env or the user prompt
     if (!globalWallet) globalWallet = new ethers.Wallet(PRIVATE_KEY, provider);
 
     walletInfo.address = globalWallet.address;
@@ -209,6 +233,12 @@ async function reportTransaction() {
     log(`Error reporting transaction: ${error.message}`, "error");
   }
 }
+
+// #endregion Core Blockchain Functions
+
+// ----------------------------------------------------------------
+// #region Swap Logic
+// ----------------------------------------------------------------
 
 async function autoSwapSttUsdtg() {
   try {
@@ -334,7 +364,14 @@ async function autoSwapSttNia() {
     }
 }
 
+// #endregion Swap Logic
+
+// ----------------------------------------------------------------
+// #region Main Automation Loop
+// ----------------------------------------------------------------
+
 async function main() {
+  // Check for Private Key and prompt if not found
   if (!PRIVATE_KEY || PRIVATE_KEY.trim() === '') {
       PRIVATE_KEY = await promptForPrivateKey();
       if (!PRIVATE_KEY || PRIVATE_KEY.trim() === '') {
@@ -350,11 +387,11 @@ async function main() {
 
   await updateWalletData();
   
-
+  // Main loop
   for (let i = 1; ; i++) {
     log(`--- Starting Swap Cycle #${i} ---`, "cycle");
 
-
+    // Alternate between the two swap functions
     if (i % 2 !== 0) {
       log("Selected pair for this cycle: STT & USDT.g", "info");
       await autoSwapSttUsdtg();
@@ -363,7 +400,7 @@ async function main() {
       await autoSwapSttNia();
     }
     
-
+    // Update wallet info after the swap
     await updateWalletData();
 
     const waitMinutes = (DELAY_PER_SWAP_MS / 1000 / 60).toFixed(2);
@@ -377,7 +414,4 @@ main().catch(error => {
   process.exit(1);
 });
 
-
-});
-
-
+// #endregion Main Automation Loop
