@@ -25,23 +25,12 @@ A simple, automated Node.js script for performing token swaps on the Somnia test
 2.  **Install Dependencies:**
     Open your terminal in the project folder and run:
     ```bash
-    npm install
+    bun install
     ```
-
-3.  **Set Up Environment File:**
-    Create a file named `.env` in the same directory. This file is used to store your private key and other configuration variables.
-
-    You can leave `PRIVATE_KEY` empty if you prefer to be prompted for it every time you run the script.
-    ```env
-    # Your wallet's private key (optional, you will be prompted if it's empty)
-    PRIVATE_KEY=
-    
-    # RPC URL for the Somnia Testnet
-    RPC_URL_SOMNIA_TESTNET=https://dream-rpc.somnia.network/
-    
-    # Token Addresses on Somnia Testnet
-    USDTG_ADDRESS=0xDa4FDE38bE7a2b959BF46E032ECfA21e64019b76
-    NIA_ADDRESS=0xF2F773753cEbEFaF9b68b841d80C083b18C69311
+    if you prefer fastttt
+    or just
+    ```bash
+    npm install
     ```
 
 ## Running the Bot
@@ -52,7 +41,7 @@ You can run the bot directly or use a terminal multiplexer like `screen` to keep
 
 To run the bot in your active terminal session:
 ```bash
-npm start
+bun index.js
 ```
 or
 ```bash
