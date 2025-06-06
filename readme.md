@@ -35,11 +35,11 @@ A simple, automated Node.js script for performing token swaps on the Somnia test
     PRIVATE_KEY=
     
     # RPC URL for the Somnia Testnet
-    RPC_URL_SOMNIA_TESTNET=[https://rpc.somnia.network](https://rpc.somnia.network)
+    RPC_URL_SOMNIA_TESTNET=https://dream-rpc.somnia.network/
     
     # Token Addresses on Somnia Testnet
-    USDTG_ADDRESS=0x2327320b5711714659b441F0994A1F25A444a179
-    NIA_ADDRESS=0x5a1123a4a9e5281e6e589445a663c412574542da
+    USDTG_ADDRESS=0xDa4FDE38bE7a2b959BF46E032ECfA21e64019b76
+    NIA_ADDRESS=0xF2F773753cEbEFaF9b68b841d80C083b18C69311
     ```
 
 ## Running the Bot
