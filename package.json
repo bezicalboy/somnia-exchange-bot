@@ -1,0 +1,16 @@
+{
+  "name": "somnia-automated-swap-bot",
+  "version": "1.2.0",
+  "description": "An automated swapping bot for Somnia Exchange that prompts for a private key if not found in the .env file.",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "ethers": "^6.13.7"
+  }
+}
