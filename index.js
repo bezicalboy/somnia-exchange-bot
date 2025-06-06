@@ -1,6 +1,7 @@
 import "dotenv/config";
 import { ethers } from "ethers";
 import readline from 'readline';
+import fs from 'fs';
 
 // ----------------------------------------------------------------
 // #region Configuration
@@ -15,11 +16,19 @@ const WSTT_ADDRESS = "0xf22ef0085f6511f70b01a68f360dcc56261f768a";
 const NETWORK_NAME = "Somnia Testnet";
 
 // Automation Settings
-const TOTAL_SWAPS_PER_24_HOURS = 100;
-const DELAY_PER_SWAP_MS = (24 * 60 * 60 * 1000) / TOTAL_SWAPS_PER_24_HOURS; // ~14.4 minutes
+const SWAPS_PER_BATCH = 100;
+const DELAY_BETWEEN_SWAPS_MS = 10000; // 10 seconds
 
-// #endregion Configuration
-
+console.log(`
+██╗  ██╗███████╗██╗     ██╗██╗  ██╗
+██║  ██║██╔════╝██║     ██║██║  ██║
+███████║█████╗  ██║     ██║███████║
+██╔══██║██╔══╝  ██║     ██║╚════██║
+██║  ██║███████╗███████╗███████╗██║
+╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝╚═╝
+                                   
+`);
+console.log("Made by love hehe fuck off, join https://t.me/helladrops");
 // ----------------------------------------------------------------
 // #region ABIs and Global Variables
 // ----------------------------------------------------------------
@@ -49,19 +58,6 @@ let lastSwapDirectionSttNia = "NIA_TO_STT";
 // #region Helper Functions
 // ----------------------------------------------------------------
 
-console.log(`
- ███▄    █   ▄████ ▓█████  ███▄    █ ▄▄▄█████▓ ▒█████  ▄▄▄█████▓
- ██ ▀█   █  ██▒ ▀█▒▓█   ▀  ██ ▀█   █ ▓  ██▒ ▓▒▒██▒  ██▒▓  ██▒ ▓▒
-▓██  ▀█ ██▒▒██░▄▄▄░▒███   ▓██  ▀█ ██▒▒ ▓██░ ▒░▒██░  ██▒▒ ▓██░ ▒░
-▓██▒  ▐▌██▒░▓█  ██▓▒▓█  ▄ ▓██▒  ▐▌██▒░ ▓██▓ ░ ▒██   ██░░ ▓██▓ ░ 
-▒██░   ▓██░░▒▓███▀▒░▒████▒▒██░   ▓██░  ▒██▒ ░ ░ ████▓▒░  ▒██▒ ░ 
-░ ▒░   ▒ ▒  ░▒   ▒ ░░ ▒░ ░░ ▒░   ▒ ▒   ▒ ░░   ░ ▒░▒░▒░   ▒ ░░   
-░ ░░   ░ ▒░  ░   ░  ░ ░  ░░ ░░   ░ ▒░    ░      ░ ▒ ▒░     ░    
-   ░   ░ ░ ░ ░   ░    ░      ░   ░ ░   ░      ░ ░ ░ ▒    ░      
-         ░       ░    ░  ░         ░              ░ ░           
-                                                                
-`);
-
 function log(message, type = "system") {
   const timestamp = new Date().toISOString();
   const cleanMessage = message.replace(/\{[^}]+\}/g, '');
@@ -69,9 +65,23 @@ function log(message, type = "system") {
 }
 
 /**
- * Prompts the user for their private key if it's not found in the .env file.
- * @returns {Promise<string>} The private key.
+ * Saves the provided private key to the .env file.
+ * @param {string} privateKey The private key to save.
  */
+function saveKeyToEnv(privateKey) {
+    log('Saving private key to .env file for future sessions.', 'info');
+    try {
+        // Append the key to the .env file to avoid overwriting existing values.
+        // The newline at the beginning ensures it starts on a new line.
+        const contentToAppend = `\nPRIVATE_KEY=${privateKey}\n`;
+        fs.appendFileSync('.env', contentToAppend);
+        log('Successfully saved PRIVATE_KEY to .env file.', 'success');
+    } catch (error) {
+        log('Could not save private key to .env file.', 'error');
+        log(error.message, 'error');
+    }
+}
+
 function promptForPrivateKey() {
     const rl = readline.createInterface({
         input: process.stdin,
@@ -79,18 +89,14 @@ function promptForPrivateKey() {
     });
 
     return new Promise(resolve => {
-        // Add a security warning for the user.
-        console.log('\x1b[33m%s\x1b[0m', 'WARNING: Your private key will be visible as you type or paste it. Please be in a secure environment.');
-        
+        console.log('\x1b[33m%s\x1b[0m', 'WARNING: Your private key will be visible. Please be in a secure environment.');
         rl.question('Private key not found in .env. Please enter it now: ', (key) => {
             rl.close();
-            // Use process.stdout.write to prevent the key from being in the final log line
             process.stdout.write('\n'); 
             resolve(key.trim());
         });
     });
 }
-
 
 function getShortAddress(address) {
   return address ? `${address.slice(0, 6)}...${address.slice(-4)}` : "N/A";
@@ -112,7 +118,6 @@ const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 async function updateWalletData() {
   try {
     if (!provider) provider = new ethers.JsonRpcProvider(RPC_URL);
-    // The globalWallet will now be initialized with the key from .env or the user prompt
     if (!globalWallet) globalWallet = new ethers.Wallet(PRIVATE_KEY, provider);
 
     walletInfo.address = globalWallet.address;
@@ -138,7 +143,6 @@ async function updateWalletData() {
     log(`Wallet updated: Address: ${getShortAddress(walletInfo.address)}, STT: ${parseFloat(walletInfo.balanceStt).toFixed(4)}, USDT.g: ${parseFloat(walletInfo.balanceUsdtg).toFixed(2)}, NIA: ${parseFloat(walletInfo.balanceNia).toFixed(4)}, Points: ${walletInfo.points}, Rank: ${walletInfo.rank}`, "info");
 
   } catch (error) {
-    // Catch potential errors from an invalid private key
     if (error.message.includes("invalid private key")) {
         log("The provided private key is invalid. Please check and restart the script.", "critical");
         process.exit(1);
@@ -185,7 +189,7 @@ async function executeSwapWithNonceRetry(txFn, maxRetries = 3) {
       if (error.message.includes("nonce")) {
         log(`Nonce error (attempt ${retry + 1}): ${error.message}. Retrying...`, "warning");
         if (retry === maxRetries - 1) throw new Error(`Failed after ${maxRetries} attempts: ${error.message}`);
-        await delay(2000); // Wait 2 seconds before retrying
+        await delay(2000);
       } else {
         throw error;
       }
@@ -258,7 +262,7 @@ async function autoSwapSttUsdtg() {
       const amountIn = ethers.parseEther(sttAmount.toString());
       const path = [WSTT_ADDRESS, USDTG_ADDRESS];
       const amountOutMinRaw = await getAmountOut(amountIn, path);
-      const amountOutMin = amountOutMinRaw * BigInt(90) / BigInt(100); // 10% slippage
+      const amountOutMin = amountOutMinRaw * BigInt(90) / BigInt(100);
 
       log(`Performing swap: ${sttAmount} STT -> USDT.g (min out: ${ethers.formatUnits(amountOutMin, 6)})`, "swap");
       const receipt = await executeSwapWithNonceRetry(async (nonce) =>
@@ -284,7 +288,7 @@ async function autoSwapSttUsdtg() {
       const amountIn = ethers.parseUnits(usdtgAmount.toString(), decimals);
       const path = [USDTG_ADDRESS, WSTT_ADDRESS];
       const amountOutMinRaw = await getAmountOut(amountIn, path);
-      const amountOutMin = amountOutMinRaw * BigInt(90) / BigInt(100); // 10% slippage
+      const amountOutMin = amountOutMinRaw * BigInt(90) / BigInt(100);
 
       log(`Performing swap: ${usdtgAmount} USDT.g -> STT (min out: ${ethers.formatEther(amountOutMin)})`, "swap");
       const receipt = await executeSwapWithNonceRetry(async (nonce) =>
@@ -320,7 +324,7 @@ async function autoSwapSttNia() {
             const amountIn = ethers.parseEther(sttAmount.toString());
             const path = [WSTT_ADDRESS, NIA_ADDRESS];
             const amountOutMinRaw = await getAmountOut(amountIn, path);
-            const amountOutMin = amountOutMinRaw * BigInt(90) / BigInt(100); // 10% slippage
+            const amountOutMin = amountOutMinRaw * BigInt(90) / BigInt(100);
 
             log(`Performing swap: ${sttAmount} STT -> NIA (min out: ${ethers.formatUnits(amountOutMin, 18)})`, "swap");
             const receipt = await executeSwapWithNonceRetry(async (nonce) =>
@@ -346,7 +350,7 @@ async function autoSwapSttNia() {
             const amountIn = ethers.parseUnits(niaAmount.toString(), decimals);
             const path = [NIA_ADDRESS, WSTT_ADDRESS];
             const amountOutMinRaw = await getAmountOut(amountIn, path);
-            const amountOutMin = amountOutMinRaw * BigInt(90) / BigInt(100); // 10% slippage
+            const amountOutMin = amountOutMinRaw * BigInt(90) / BigInt(100);
 
             log(`Performing swap: ${niaAmount} NIA -> STT (min out: ${ethers.formatEther(amountOutMin)})`, "swap");
             const receipt = await executeSwapWithNonceRetry(async (nonce) =>
@@ -371,41 +375,57 @@ async function autoSwapSttNia() {
 // ----------------------------------------------------------------
 
 async function main() {
-  // Check for Private Key and prompt if not found
   if (!PRIVATE_KEY || PRIVATE_KEY.trim() === '') {
       PRIVATE_KEY = await promptForPrivateKey();
       if (!PRIVATE_KEY || PRIVATE_KEY.trim() === '') {
           log('No private key was provided. Exiting now.', 'critical');
           process.exit(1);
       }
+      saveKeyToEnv(PRIVATE_KEY);
   }
 
   log("Starting automated swap bot...", "info");
-  const delayMinutes = (DELAY_PER_SWAP_MS / 1000 / 60).toFixed(2);
-  log(`Configuration: ${TOTAL_SWAPS_PER_24_HOURS} swaps per 24 hours.`, 'info');
-  log(`Delay between swaps will be approximately ${delayMinutes} minutes.`, "info");
+  log(`Bot will perform ${SWAPS_PER_BATCH} swaps with a ${DELAY_BETWEEN_SWAPS_MS / 1000} second delay, then wait for the next day.`, 'info');
 
   await updateWalletData();
-  
-  // Main loop
-  for (let i = 1; ; i++) {
-    log(`--- Starting Swap Cycle #${i} ---`, "cycle");
 
-    // Alternate between the two swap functions
-    if (i % 2 !== 0) {
-      log("Selected pair for this cycle: STT & USDT.g", "info");
-      await autoSwapSttUsdtg();
-    } else {
-      log("Selected pair for this cycle: STT & NIA", "info");
-      await autoSwapSttNia();
+  while (true) {
+    const cycleStartTime = Date.now();
+    log(`--- Starting new 24-hour cycle: Batch of ${SWAPS_PER_BATCH} swaps. ---`, 'cycle');
+
+    for (let i = 1; i <= SWAPS_PER_BATCH; i++) {
+        log(`--- Starting Swap #${i} of ${SWAPS_PER_BATCH} ---`, 'cycle');
+
+        if (i % 2 !== 0) {
+            log("Selected pair for this cycle: STT & USDT.g", "info");
+            await autoSwapSttUsdtg();
+        } else {
+            log("Selected pair for this cycle: STT & NIA", "info");
+            await autoSwapSttNia();
+        }
+        
+        await updateWalletData();
+
+        if (i < SWAPS_PER_BATCH) {
+            const waitSeconds = DELAY_BETWEEN_SWAPS_MS / 1000;
+            log(`--- Swap #${i} complete. Waiting ${waitSeconds} seconds. ---`, 'cycle');
+            await delay(DELAY_BETWEEN_SWAPS_MS);
+        }
     }
-    
-    // Update wallet info after the swap
-    await updateWalletData();
 
-    const waitMinutes = (DELAY_PER_SWAP_MS / 1000 / 60).toFixed(2);
-    log(`--- Cycle #${i} complete. Waiting ${waitMinutes} minutes for the next one. ---`, "cycle");
-    await delay(DELAY_PER_SWAP_MS);
+    log(`--- Swap batch of ${SWAPS_PER_BATCH} complete. ---`, 'cycle');
+    const cycleEndTime = Date.now();
+    const elapsedTime = cycleEndTime - cycleStartTime;
+    const T_24_HOURS_MS = 24 * 60 * 60 * 1000;
+    const timeToWait = T_24_HOURS_MS - elapsedTime;
+
+    if (timeToWait > 0) {
+        const waitHours = (timeToWait / 1000 / 60 / 60).toFixed(2);
+        log(`Waiting for approximately ${waitHours} hours until the next 24-hour cycle.`, 'cycle');
+        await delay(timeToWait);
+    } else {
+        log('Batch took longer than 24 hours to complete. Starting next cycle immediately.', 'warning');
+    }
   }
 }
 
