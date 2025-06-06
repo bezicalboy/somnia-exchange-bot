@@ -18,7 +18,9 @@ A simple, automated Node.js script for performing token swaps on the Somnia test
 ## Setup & Installation
 
 1.  **Download Files:**
-    Make sure you have `index.js` and `package.json` in a new project folder.
+     ```bash
+    git clone https://github.com/bezicalboy/somnia-exchange-bot.git && cd somnia-exchange-bot
+    ```
 
 2.  **Install Dependencies:**
     Open your terminal in the project folder and run:
