@@ -16,7 +16,7 @@ const WSTT_ADDRESS = "0xf22ef0085f6511f70b01a68f360dcc56261f768a";
 const NETWORK_NAME = "Somnia Testnet";
 
 // Automation Settings
-const SWAPS_PER_BATCH = 100;
+const SWAPS_PER_BATCH = 30;
 const DELAY_BETWEEN_SWAPS_MS = 10000; // 10 seconds
 
 console.log(`
